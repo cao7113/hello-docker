@@ -1,16 +1,15 @@
 # https://taskfile.dev
 version: '3'
 tasks:
-  hi:
+  version:
     cmds:
-      - echo 'Hi Task https://taskfile.dev !'
-    silent: true
-  
-  enable-os:
-    status:
-    - test -f Taskfile_{{OS}}.yml
+    - docker version
+    - docker-compose version
+    
+  setup:
+    desc: setup lcoal docker-env
     cmds:
-    - touch Taskfile_{{OS}}.yml
+    - task: os:install-desktop
 
 includes:
   os: ./Taskfile_{{OS}}.yml

@@ -1,3 +1,10 @@
 # https://taskfile.dev
 version: '3'
 tasks:
+  install-desktop:
+    desc: install docker-desktop App
+    status:
+    - which docker > /dev/null
+    cmds:
+    - brew install homebrew/cask/docker
+    - docker version
