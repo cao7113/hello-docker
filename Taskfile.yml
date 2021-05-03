@@ -1,15 +1,60 @@
 # https://taskfile.dev
 version: '3'
+vars:
+  trynet: try-net
+  mysql_name: try-mysql
+  mysql_root_secret: root
+
 tasks:
   version:
+    desc: show docker tools versions
     cmds:
     - docker version
     - docker-compose version
-    
-  setup:
+
+  netshot:
+    deps:
+    - setup-try-net
+    - setup-mysql-server
+    cmds:
+    - docker run -it --network {{.trynet}} nicolaka/netshoot
+  
+  mysql:
+    deps: [setup-mysql-server]
+    cmds:
+    - docker exec -it {{.mysql_name}} mysql -p{{.mysql_root_secret}}
+
+  setup-docker:
     desc: setup lcoal docker-env
     cmds:
-    - task: os:install-desktop
+    - task: os:install-docker-desktop
+
+  setup-try-net:
+    desc: try network
+    status:
+    - test -n "$(docker network ls -q -f name={{.trynet}})"
+    cmds:
+    - docker network create {{.trynet}} || true
+  
+  setup-mysql-server:
+    desc: try mysql server
+    status:
+    - test -n "$(docker ps -q -f name={{.mysql_name}})"
+    deps: [setup-try-net]
+    cmds:
+    - |
+      docker run -d --name {{.mysql_name}} \
+      --network {{.trynet}} --network-alias mysql \
+      -v try-mysql-data:/var/lib/mysql \
+      -e MYSQL_ROOT_PASSWORD={{.mysql_root_secret}} \
+      -e MYSQL_DATABASE=try \
+      mysql:5.7
+    # https://github.com/vishnubob/wait-for-it
+    - sleep 2
+    - docker exec -it {{.mysql_name}} mysql -p{{.mysql_root_secret}} -e "select version();"
+    - docker exec -it {{.mysql_name}} mysql -p{{.mysql_root_secret}} -e "show databases;"
+    # force-clean data if new setup
+    # - docker volume rm try-mysql-data
 
 includes:
   os: ./Taskfile_{{OS}}.yml

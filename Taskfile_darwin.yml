@@ -1,7 +1,7 @@
 # https://taskfile.dev
 version: '3'
 tasks:
-  install-desktop:
+  install-docker-desktop:
     desc: install docker-desktop App
     status:
     - which docker > /dev/null
