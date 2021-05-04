@@ -20,9 +20,23 @@ tasks:
     - docker app push {{.app_img}}:0.1.0
   
   app-run:
-    desc: run docker-app, require k8s enabled
+    desc: run docker-app, please ensure docker in Swarm mode
     cmds:
-    - docker app run --orchestrator kubernetes --name hello-app {{.app_img}}:0.1.0
+    - docker app run --name hello-app1 {{.app_img}}:0.1.0
+    #- docker app run --orchestrator kubernetes --name hello-app {{.app_img}}:0.1.0
+    # todo not support k8s now
+
+  show:
+    desc: inspect info
+    cmds:
+    - docker app inspect hello-app --pretty
+
+  query:
+    desc: build and update again
+    cmds:
+    - docker app update hello-app --set text=hello-app-again
+    - sleep 20 # wait ingress works???
+    - curl http://localhost:5678
 
   comp-up:
     cmds:

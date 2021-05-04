@@ -1,0 +1,7 @@
+# https://taskfile.dev
+version: '3'
+tasks:
+  setup:
+    cmds:
+    - docker swarm init
+    - docker info

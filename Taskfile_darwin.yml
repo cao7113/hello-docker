@@ -7,4 +7,4 @@ tasks:
     - which docker > /dev/null
     cmds:
     - brew install homebrew/cask/docker
-    - docker version
+    - docker info
