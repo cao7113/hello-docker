@@ -1,0 +1,25 @@
+# https://taskfile.dev
+version: '3'
+vars:
+  app_img: cao7113/hello-app
+tasks:
+  app-init:
+    desc: init docker-app from a docker-compose file
+    status:
+      - test -d hello.dockerapp
+    cmds:
+      - docker app init --compose-file docker-compose.yml hello
+  app-build:
+    desc: build docker-app
+    cmds:
+      - docker app build . -f hello.dockerapp -t {{.app_img}}:0.1.0
+
+  app-push:
+    desc: push app image to docker-hub
+    cmds:
+    - docker app push {{.app_img}}:0.1.0
+  
+  app-run:
+    desc: run docker-app, require k8s enabled
+    cmds:
+    - docker app run {{.app_img}}:0.1.0
