@@ -6,6 +6,10 @@ vars:
   mysql_root_secret: root
 
 tasks:
+  rand:
+    cmds:
+    - docker run -d ubuntu bash -c "shuf -i 1-10000 -n 1 -o /data.txt && tail -f /dev/null"
+    
   version:
     desc: show docker tools versions
     cmds:
@@ -19,22 +23,15 @@ tasks:
     cmds:
     - docker run -it --network {{.trynet}} nicolaka/netshoot
   
-  mysql:
+  sql:
     deps: [setup-mysql-server]
     cmds:
     - docker exec -it {{.mysql_name}} mysql -p{{.mysql_root_secret}}
-
-  setup-docker:
-    desc: setup lcoal docker-env
+  
+  mysql-sh:
+    deps: [setup-mysql-server]
     cmds:
-    - task: os:install-docker-desktop
-
-  setup-try-net:
-    desc: try network
-    status:
-    - test -n "$(docker network ls -q -f name={{.trynet}})"
-    cmds:
-    - docker network create {{.trynet}} || true
+    - docker exec -it {{.mysql_name}} bash
   
   setup-mysql-server:
     desc: try mysql server
@@ -42,6 +39,7 @@ tasks:
     - test -n "$(docker ps -q -f name={{.mysql_name}})"
     deps: [setup-try-net]
     cmds:
+    - docker rm -f {{.mysql_name}} || true
     - |
       docker run -d --name {{.mysql_name}} \
       --network {{.trynet}} --network-alias mysql \
@@ -50,11 +48,24 @@ tasks:
       -e MYSQL_DATABASE=try \
       mysql:5.7
     # https://github.com/vishnubob/wait-for-it
+    # https://github.com/ufoscout/docker-compose-wait
     - sleep 2
     - docker exec -it {{.mysql_name}} mysql -p{{.mysql_root_secret}} -e "select version();"
     - docker exec -it {{.mysql_name}} mysql -p{{.mysql_root_secret}} -e "show databases;"
     # force-clean data if new setup
     # - docker volume rm try-mysql-data
+
+  setup-try-net:
+    desc: try network
+    status:
+    - test -n "$(docker network ls -q -f name={{.trynet}})"
+    cmds:
+    - docker network create {{.trynet}}
+
+  setup-docker:
+    desc: setup lcoal docker-env
+    cmds:
+    - task: os:install-docker-desktop
 
 includes:
   os: ./Taskfile_{{OS}}.yml

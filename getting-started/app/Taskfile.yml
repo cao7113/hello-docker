@@ -1,0 +1,107 @@
+# https://taskfile.dev
+version: '3'
+vars:
+  container_name: getting-started
+  img_name: getting-started
+tasks:
+  up:
+    desc: up with docker-compose
+    cmds:
+    - docker-compose up -d
+  down:
+    desc: down with docker-compose
+    cmds:
+    - docker-compose down
+
+  clean-running:
+    desc: clean running containters base on getting-started
+    cmds:
+      # - docker rm -f $(docker ps -aq -f ancestor={{.img_name}}) || true
+      - docker rm -f {{.container_name}} || true
+  offical:
+    desc: run app based on offical image
+    cmds:
+      - task: clean-running
+      - docker run -dp 80:80 docker/getting-started
+
+  simple:
+    cmds:
+      - task: clean-running
+      - docker run --name {{.container_name}} -dp 3000:3000 {{.img_name}}
+
+  persist:
+    desc: persist data into sqlite3 http://localhost/tutorial/persisting-our-data/
+    cmds:
+      - docker volume create todo-db || true
+      - docker volume inspect todo-db
+      - task: clean-running
+      - docker run --name {{.container_name}} -dp 3000:3000 -v todo-db:/etc/todos {{.img_name}}
+      - open http://localhost:3000
+
+  auto-refresh:
+    desc: auto restart based on nodemon http://localhost/tutorial/using-bind-mounts/
+    cmds:
+      - task: clean-running
+      - |
+        docker run -dp 3000:3000 \
+        --name {{.container_name}} |
+        -w /app -v "$(pwd):/app" \
+        node:12-alpine \
+        sh -c "yarn install && yarn run dev"
+      - docker logs -f {{.container_name}}
+
+  todo-down:
+    cmds:
+    - docker rm -f todo-app || true
+    - docker rm -f todo-mysql || true
+    - docker network rm todo-net || true
+
+  todo-net:
+    cmds:
+    - docker network create todo-app || true
+  todo-mysql:
+    cmds:
+    - task: todo-net
+    - docker rm -f todo-mysql || true
+    - |
+      docker run -d \
+      --network todo-app --network-alias mysql \
+      --name todo-mysql \
+      -v todo-mysql-data:/var/lib/mysql \
+      -e MYSQL_ROOT_PASSWORD=secret \
+      -e MYSQL_DATABASE=todos \
+      mysql:5.7
+    - sleep 2
+    - docker exec -it todo-mysql mysql -psecret -e "show databases;"
+  sql:
+    cmds:
+    - docker exec -it todo-mysql mysql -psecret --database todos
+  todo-app:
+    cmds:
+    - task: todo-mysql
+    - docker rm -f todo-app || true
+    - |
+      docker run -dp 3000:3000 \
+      -w /app -v "$(pwd):/app" \
+      --name todo-app \
+      --network todo-app \
+      -e MYSQL_HOST=mysql \
+      -e MYSQL_USER=root \
+      -e MYSQL_PASSWORD=secret \
+      -e MYSQL_DB=todos \
+      node:12-alpine \
+      sh -c "yarn install && yarn run dev"
+    - docker exec -it todo-mysql mysql -psecret -Dtodos -e "select * from todo_items;"
+
+  build:
+    desc: build the image
+    cmds:
+      - docker build -t {{.img_name}} .
+  scan:
+    desc: scan it for security vulnerabilities. Docker has partnered with Snyk to provide the vulnerability scanning service. 
+    cmds:
+      - docker scan {{.img_name}}
+  history:
+    desc: see the layers in the getting-started image you created earlier in the tutorial
+    cmds:
+      - docker image history {{.img_name}}
