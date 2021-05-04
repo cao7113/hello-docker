@@ -17,7 +17,7 @@ tasks:
     desc: show docker tools versions
     cmds:
     - docker version
-    - docker-compose version
+    # - docker info
 
   netshot:
     deps:
