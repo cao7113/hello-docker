@@ -1,33 +1,33 @@
 # https://taskfile.dev
 version: '3'
 vars:
-  container_name: getting-started
-  img_name: getting-started
+  container_name: todo
+  img_name: todo
 tasks:
-  up:
-    desc: up with docker-compose
+  getting-started:
+    desc: getting started tutorial with docker
     cmds:
-    - docker-compose up -d
-  down:
-    desc: down with docker-compose
+      - docker run -dp 80:80 docker/getting-started
+
+  build:
+    desc: build the image
     cmds:
-    - docker-compose down
+      - docker build -t {{.img_name}} .
 
   clean-running:
-    desc: clean running containters base on getting-started
+    desc: clean running containters
     cmds:
       # - docker rm -f $(docker ps -aq -f ancestor={{.img_name}}) || true
       - docker rm -f {{.container_name}} || true
-  offical:
-    desc: run app based on offical image
-    cmds:
-      - task: clean-running
-      - docker run -dp 80:80 docker/getting-started
 
-  simple:
+  quick:
     cmds:
       - task: clean-running
       - docker run --name {{.container_name}} -dp 3000:3000 {{.img_name}}
+  
+  open:
+    cmds:
+      - open http://localhost:3000
 
   persist:
     desc: persist data into sqlite3 http://localhost/tutorial/persisting-our-data/
@@ -36,7 +36,6 @@ tasks:
       - docker volume inspect todo-db
       - task: clean-running
       - docker run --name {{.container_name}} -dp 3000:3000 -v todo-db:/etc/todos {{.img_name}}
-      - open http://localhost:3000
 
   auto-refresh:
     desc: auto restart based on nodemon http://localhost/tutorial/using-bind-mounts/
@@ -73,9 +72,6 @@ tasks:
       mysql:5.7
     - sleep 2
     - docker exec -it todo-mysql mysql -psecret -e "show databases;"
-  sql:
-    cmds:
-    - docker exec -it todo-mysql mysql -psecret --database todos
   todo-app:
     cmds:
     - task: todo-mysql
@@ -92,11 +88,20 @@ tasks:
       node:12-alpine \
       sh -c "yarn install && yarn run dev"
     - docker exec -it todo-mysql mysql -psecret -Dtodos -e "select * from todo_items;"
-
-  build:
-    desc: build the image
+  sql:
     cmds:
-      - docker build -t {{.img_name}} .
+    - docker exec -it todo-mysql mysql -psecret --database todos
+
+  comp-up:
+    desc: up with docker-compose
+    cmds:
+    - task: todo-down
+    - docker compose up -d
+  comp-down:
+    desc: down with docker-compose
+    cmds:
+    - docker compose down
+
   scan:
     desc: scan it for security vulnerabilities. Docker has partnered with Snyk to provide the vulnerability scanning service. 
     cmds:

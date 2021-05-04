@@ -5,6 +5,9 @@ vars:
   mysql_name: try-mysql
   mysql_root_secret: root
 
+includes:
+  os: ./Taskfile_{{OS}}.yml
+
 tasks:
   rand:
     cmds:
@@ -66,6 +69,3 @@ tasks:
     desc: setup lcoal docker-env
     cmds:
     - task: os:install-docker-desktop
-
-includes:
-  os: ./Taskfile_{{OS}}.yml
