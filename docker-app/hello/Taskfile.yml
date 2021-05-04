@@ -22,4 +22,11 @@ tasks:
   app-run:
     desc: run docker-app, require k8s enabled
     cmds:
-    - docker app run {{.app_img}}:0.1.0
+    - docker app run --orchestrator kubernetes --name hello-app {{.app_img}}:0.1.0
+
+  comp-up:
+    cmds:
+      - docker compose up -d
+  comp-down:
+    cmds:
+      - docker compose down
